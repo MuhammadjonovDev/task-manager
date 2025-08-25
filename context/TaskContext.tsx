@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useReducer, useEffect, ReactNode } from 'react';
 import { Task, TaskStats, FilterType, SortType } from '../types';
 import { StorageService } from '../utils/storage';
+import { useAuth } from './AuthContext';
 
 interface TaskState {
   tasks: Task[];
@@ -89,11 +90,17 @@ export const useTask = () => {
 
 export const TaskProvider = ({ children }: { children: ReactNode }) => {
   const [state, dispatch] = useReducer(taskReducer, initialState);
+  const { user } = useAuth();
 
   const loadTasks = async () => {
+    if (!user) {
+      dispatch({ type: 'SET_TASKS', payload: [] });
+      return;
+    }
+    
     dispatch({ type: 'SET_LOADING', payload: true });
     try {
-      const tasks = await StorageService.getTasks();
+      const tasks = await StorageService.getTasks(user.id);
       dispatch({ type: 'SET_TASKS', payload: tasks });
     } catch (error) {
       dispatch({ type: 'SET_ERROR', payload: 'Failed to load tasks' });
@@ -101,6 +108,8 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const addTask = async (taskData: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>) => {
+    if (!user) return;
+    
     const newTask: Task = {
       ...taskData,
       id: Date.now().toString(),
@@ -111,22 +120,26 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
     dispatch({ type: 'ADD_TASK', payload: newTask });
     
     const updatedTasks = [...state.tasks, newTask];
-    await StorageService.saveTasks(updatedTasks);
+    await StorageService.saveTasks(updatedTasks, user.id);
   };
 
   const updateTask = async (updatedTask: Task) => {
+    if (!user) return;
+    
     const task = { ...updatedTask, updatedAt: new Date() };
     dispatch({ type: 'UPDATE_TASK', payload: task });
     
     const updatedTasks = state.tasks.map(t => t.id === task.id ? task : t);
-    await StorageService.saveTasks(updatedTasks);
+    await StorageService.saveTasks(updatedTasks, user.id);
   };
 
   const deleteTask = async (id: string) => {
+    if (!user) return;
+    
     dispatch({ type: 'DELETE_TASK', payload: id });
     
     const updatedTasks = state.tasks.filter(task => task.id !== id);
-    await StorageService.saveTasks(updatedTasks);
+    await StorageService.saveTasks(updatedTasks, user.id);
   };
 
   const toggleTaskStatus = async (id: string) => {
@@ -206,8 +219,10 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
   };
 
   useEffect(() => {
-    loadTasks();
-  }, []);
+    if (user) {
+      loadTasks();
+    }
+  }, [user]);
 
   const value: TaskContextType = {
     ...state,

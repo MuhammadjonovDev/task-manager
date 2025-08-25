@@ -4,12 +4,14 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { User as UserIcon, Settings, Moon, Sun, Bell, Download, Trash2, CreditCard as Edit3, Save, X, TrendingUp, Calendar, CircleCheck as CheckCircle, Clock } from 'lucide-react-native';
 import { useTask } from '../../context/TaskContext';
 import { useTheme } from '../../context/ThemeContext';
+import { useAuth } from '../../context/AuthContext';
 import { StorageService } from '../../utils/storage';
 import { User } from '../../types';
 
 export default function Profile() {
   const { tasks, getTaskStats, loadTasks } = useTask();
   const { isDark, toggleTheme } = useTheme();
+  const { user: authUser, signOut } = useAuth();
   
   const [user, setUser] = useState<User | null>(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -22,23 +24,25 @@ export default function Profile() {
   }, []);
 
   const loadUserData = async () => {
-    const userData = await StorageService.getUser();
-    if (userData) {
-      setUser(userData);
-      setEditForm({ name: userData.name, email: userData.email });
-    } else {
-      // Create default user
-      const defaultUser: User = {
-        name: 'Task Master',
-        email: 'user@example.com',
-        preferences: {
-          theme: 'light',
-          notifications: true,
-        },
-      };
-      await StorageService.saveUser(defaultUser);
-      setUser(defaultUser);
-      setEditForm({ name: defaultUser.name, email: defaultUser.email });
+    if (authUser) {
+      const userData = await StorageService.getUser();
+      if (userData) {
+        setUser(userData);
+        setEditForm({ name: userData.name, email: userData.email });
+      } else {
+        // Create user profile from auth data
+        const defaultUser: User = {
+          name: authUser.user_metadata?.full_name || 'Task Master',
+          email: authUser.email || 'user@example.com',
+          preferences: {
+            theme: 'light',
+            notifications: true,
+          },
+        };
+        await StorageService.saveUser(defaultUser);
+        setUser(defaultUser);
+        setEditForm({ name: defaultUser.name, email: defaultUser.email });
+      }
     }
   };
 
@@ -87,7 +91,9 @@ export default function Profile() {
           text: 'Delete',
           style: 'destructive',
           onPress: async () => {
-            await StorageService.saveTasks([]);
+            if (authUser) {
+              await StorageService.saveTasks([], authUser.id);
+            }
             await loadTasks();
             Alert.alert('Success', 'All data cleared successfully');
           },
@@ -312,6 +318,23 @@ export default function Profile() {
             onPress={handleClearAllData}
             color="#EF4444"
           />
+          
+          <SettingsItem
+            icon={UserIcon}
+            label="Sign Out"
+            value="Logout"
+            onPress={() => {
+              Alert.alert(
+                'Sign Out',
+                'Are you sure you want to sign out?',
+                [
+                  { text: 'Cancel', style: 'cancel' },
+                  { text: 'Sign Out', onPress: signOut },
+                ]
+              );
+            }}
+            color="#EF4444"
+          />
         </View>
 
         {/* App Info */}
@@ -324,7 +347,7 @@ export default function Profile() {
             Task Manager v1.0.0
           </Text>
           <Text className={`text-center text-sm mt-1 ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
-            Made with ❤️ for productivity
+            Signed in as {authUser?.email}
           </Text>
         </View>
       </ScrollView>

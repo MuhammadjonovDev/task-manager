@@ -1,15 +1,15 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Task, User } from '../types';
 
-const TASKS_KEY = '@tasks';
+const getTasksKey = (userId: string) => `@tasks_${userId}`;
 const USER_KEY = '@user';
 const THEME_KEY = '@theme';
 
 export const StorageService = {
   // Task operations
-  async getTasks(): Promise<Task[]> {
+  async getTasks(userId: string): Promise<Task[]> {
     try {
-      const tasksJson = await AsyncStorage.getItem(TASKS_KEY);
+      const tasksJson = await AsyncStorage.getItem(getTasksKey(userId));
       if (tasksJson) {
         const tasks = JSON.parse(tasksJson);
         return tasks.map((task: any) => ({
@@ -26,9 +26,9 @@ export const StorageService = {
     }
   },
 
-  async saveTasks(tasks: Task[]): Promise<void> {
+  async saveTasks(tasks: Task[], userId: string): Promise<void> {
     try {
-      await AsyncStorage.setItem(TASKS_KEY, JSON.stringify(tasks));
+      await AsyncStorage.setItem(getTasksKey(userId), JSON.stringify(tasks));
     } catch (error) {
       console.error('Error saving tasks:', error);
     }

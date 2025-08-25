@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Plus, Search, TrendingUp, Clock, CircleCheck as CheckCircle, TriangleAlert as AlertTriangle  } from 'lucide-react-native';
-import { CheckSquare } from "lucide-react-native";
+import { Plus, Search, TrendingUp, Clock, CircleCheck as CheckCircle, TriangleAlert as AlertTriangle, SquareCheck as CheckSquare } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { useTask } from '../../context/TaskContext';
 import { useTheme } from '../../context/ThemeContext';
+import { useAuth } from '../../context/AuthContext';
 import { TaskCard } from '../../components/TaskCard';
 import { DateUtils } from '../../utils/dateUtils';
 
@@ -13,6 +13,7 @@ export default function Home() {
   const router = useRouter();
   const { tasks, getTaskStats, loading, loadTasks } = useTask();
   const { isDark } = useTheme();
+  const { user } = useAuth();
   const [refreshing, setRefreshing] = useState(false);
 
   const stats = getTaskStats();
@@ -58,14 +59,10 @@ export default function Home() {
       <View className="flex-row items-center justify-between p-4 pb-2">
         <View>
           <Text className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
-            Good {new Date().getHours() < 12 ? 'Morning' : new Date().getHours() < 17 ? 'Afternoon' : 'Evening'}!
+            Hello {user?.user_metadata?.full_name?.split(' ')[0] || 'there'}!
           </Text>
           <Text className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
-            {new Date().toLocaleDateString('en-US', { 
-              weekday: 'long', 
-              month: 'long', 
-              day: 'numeric' 
-            })}
+            Have a nice day.
           </Text>
         </View>
         <TouchableOpacity
@@ -132,7 +129,7 @@ export default function Home() {
               <Text className="text-white font-semibold ml-2">New Task</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              onPress={() => router.push('/tasks')}
+              onPress={() => router.push('/(tabs)/tasks')}
               className={`
                 flex-1 flex-row items-center justify-center p-4 rounded-xl border
                 ${isDark 
@@ -168,7 +165,7 @@ export default function Home() {
               <Text className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
                 Upcoming Tasks
               </Text>
-              <TouchableOpacity onPress={() => router.push('/tasks')}>
+              <TouchableOpacity onPress={() => router.push('/(tabs)/tasks')}>
                 <Text className="text-primary-500 font-medium">See All</Text>
               </TouchableOpacity>
             </View>

@@ -4,6 +4,10 @@ module.exports = {
   presets: [require("nativewind/preset")],
   theme: {
     extend: {
+      backgroundImage: {
+        'gradient-to-br': 'linear-gradient(to bottom right, var(--tw-gradient-stops))',
+        'gradient-to-r': 'linear-gradient(to right, var(--tw-gradient-stops))',
+      },
       colors: {
         primary: {
           50: '#eff6ff',
@@ -30,6 +34,9 @@ module.exports = {
           500: '#ef4444',
           600: '#dc2626',
         }
+      },
+      fontSize: {
+        '2xl': ['28px', '34px'],
       }
     }
   },

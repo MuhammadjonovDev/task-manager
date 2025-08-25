@@ -1,10 +1,11 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, Alert } from 'react-native';
 import { CircleCheck as CheckCircle, Circle, Clock, TriangleAlert as AlertTriangle, Trash2, CreditCard as Edit } from 'lucide-react-native';
+import { useRouter } from 'expo-router';
 import { Task } from '../types';
 import { useTask } from '../context/TaskContext';
 import { useTheme } from '../context/ThemeContext';
-import { DateUtils } from '@/utils/dateUtils';
+import { DateUtils } from '../utils/dateUtils';
 
 interface TaskCardProps {
   task: Task;
@@ -15,6 +16,7 @@ interface TaskCardProps {
 export const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, compact = false }) => {
   const { deleteTask, toggleTaskStatus } = useTask();
   const { isDark } = useTheme();
+  const router = useRouter();
 
   const handleDelete = () => {
     Alert.alert(
@@ -25,6 +27,14 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, compact = fals
         { text: 'Delete', style: 'destructive', onPress: () => deleteTask(task.id) },
       ]
     );
+  };
+
+  const handleEdit = () => {
+    if (onEdit) {
+      onEdit(task);
+    } else {
+      router.push(`/task/${task.id}`);
+    }
   };
 
   const getPriorityColor = (priority: Task['priority']) => {
@@ -84,7 +94,12 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, compact = fals
 
         <View className="flex-row space-x-2 ml-2">
           {onEdit && (
-            <TouchableOpacity onPress={() => onEdit(task)}>
+            <TouchableOpacity onPress={handleEdit}>
+              <Edit size={18} color={isDark ? '#9CA3AF' : '#6B7280'} />
+            </TouchableOpacity>
+          )}
+          {!onEdit && (
+            <TouchableOpacity onPress={handleEdit}>
               <Edit size={18} color={isDark ? '#9CA3AF' : '#6B7280'} />
             </TouchableOpacity>
           )}
